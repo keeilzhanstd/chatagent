@@ -7,6 +7,7 @@ module.exports = (req, res) => {
   if (method === 'PATCH') {
     const { sellPrice, sellCurrency } = req.body;
     const data = loadData();
+    console.log(data);
     const gift = data.find(g => g.id === id);
     console.log(gift + "\nLOLO ");
     if (!gift) return res.status(404).json({ error: 'not found' });
