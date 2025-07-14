@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Telegram Gift Tracker</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 2rem; }
+table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+</style>
+</head>
+<body>
+<h1>Gift Tracker</h1>
+<form id="addForm">
+  <input type="url" id="link" placeholder="Gift link" required />
+  <input type="number" id="purchasePrice" placeholder="Purchase price" required />
+  <select id="purchaseCurrency">
+    <option value="TON">TON</option>
+    <option value="Stars">Stars</option>
+  </select>
+  <button type="submit">Add</button>
+</form>
+<h2>Gifts</h2>
+<table id="giftsTable">
+  <thead>
+    <tr><th>Link</th><th>Purchase</th><th>Sell</th><th>PnL</th><th>Actions</th></tr>
+  </thead>
+  <tbody></tbody>
+</table>
+<h2>Stats</h2>
+<div id="stats"></div>
+<script>
+async function fetchGifts() {
+  const res = await fetch('/api/gifts');
+  const data = await res.json();
+  const tbody = document.querySelector('#giftsTable tbody');
+  tbody.innerHTML = '';
+  data.forEach(gift => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><a href="${gift.link}" target="_blank">${gift.link}</a></td>
+      <td>${gift.purchasePrice} ${gift.purchaseCurrency}</td>
+      <td>
+        <input type="number" value="${gift.sellPrice || ''}" data-id="${gift.id}" class="sellPrice" />
+        ${gift.sellCurrency || ''}
+      </td>
+      <td>${gift.pnl ? gift.pnl.toFixed(2) + ' (' + gift.pnlPercent.toFixed(2) + '%)' : ''}</td>
+      <td><button data-id="${gift.id}" class="saveBtn">Save</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+document.getElementById('addForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const link = document.getElementById('link').value;
+  const purchasePrice = document.getElementById('purchasePrice').value;
+  const purchaseCurrency = document.getElementById('purchaseCurrency').value;
+  await fetch('/api/gifts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ link, purchasePrice, purchaseCurrency }) });
+  e.target.reset();
+  await fetchGifts();
+  await fetchStats();
+});
+
+async function saveSellPrice(id, sellPrice) {
+  await fetch('/api/gifts/' + id, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sellPrice }) });
+}
+
+document.addEventListener('click', async (e) => {
+  if (e.target.classList.contains('saveBtn')) {
+    const id = e.target.getAttribute('data-id');
+    const input = document.querySelector(`input.sellPrice[data-id="${id}"]`);
+    const sellPrice = input.value;
+    await saveSellPrice(id, sellPrice);
+    await fetchGifts();
+    await fetchStats();
+  }
+});
+
+async function fetchStats() {
+  const res = await fetch('/api/stats');
+  const stats = await res.json();
+  document.getElementById('stats').innerText = `Total profit: ${stats.totalProfit.toFixed(2)}, Overall PnL%: ${stats.overallPnlPercent.toFixed(2)}%, Sold ${stats.sold}/${stats.total}`;
+}
+
+fetchGifts();
+fetchStats();
+</script>
+</body>
+</html>
