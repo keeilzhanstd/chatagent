@@ -36,7 +36,12 @@
           <td><a :href="gift.link" target="_blank">{{ gift.link }}</a></td>
           <td>{{ gift.purchasePrice }} {{ gift.purchaseCurrency }}</td>
           <td>
-            <input type="number" v-model.number="gift.sellPrice" /> {{ gift.sellCurrency || '' }}
+            <input type="number" v-model.number="gift.sellPrice" />
+            <select v-model="gift.sellCurrency">
+              <option value="TON">TON</option>
+              <option value="Stars">Stars</option>
+            </select>
+
           </td>
           <td>
             <span v-if="gift.pnl">{{ gift.pnl.toFixed(2) }} ({{ gift.pnlPercent.toFixed(2) }}%)</span>
