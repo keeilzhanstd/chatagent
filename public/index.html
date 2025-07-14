@@ -41,6 +41,7 @@
               <option value="TON">TON</option>
               <option value="Stars">Stars</option>
             </select>
+
           </td>
           <td>
             <span v-if="gift.pnl">{{ gift.pnl.toFixed(2) }} ({{ gift.pnlPercent.toFixed(2) }}%)</span>
@@ -96,5 +97,6 @@
       }
     }).mount('#app');
   </script>
+
 </body>
 </html>

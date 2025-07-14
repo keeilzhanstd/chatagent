@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+
 const { loadData, saveData, computeStats, getOverallStats } = require('./lib/data');
 const cors = require('cors');
 
@@ -7,7 +8,6 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
-
 
 app.get('/api/gifts', (req, res) => {
   const data = loadData();
@@ -37,6 +37,7 @@ app.post('/api/gifts', (req, res) => {
 
 app.patch('/api/gift', (req, res) => {
   const { id } = req.query;
+
   const { sellPrice, sellCurrency } = req.body;
   const data = loadData();
   const gift = data.find((g) => g.id === id);
