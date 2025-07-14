@@ -2,6 +2,7 @@
 
 This is a simple Node.js portal to track Telegram NFT gifts. You can add gifts by link, record the purchase price, update the sell price later, and view profit and loss statistics. The frontend is built with Vue.js.
 
+
 ## Setup
 
 1. Install dependencies
@@ -25,3 +26,4 @@ vercel --prod
 ```
 
 After deployment open the provided URL.
+
