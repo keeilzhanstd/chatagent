@@ -1,38 +1,13 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const fs = require('fs');
-const path = require('path');
+
+const { loadData, saveData, computeStats, getOverallStats } = require('./lib/data');
 const cors = require('cors');
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
-
-const DATA_FILE = path.join(__dirname, 'data', 'gifts.json');
-
-function loadData() {
-  try {
-    const raw = fs.readFileSync(DATA_FILE, 'utf8');
-    return JSON.parse(raw);
-  } catch (err) {
-    return [];
-  }
-}
-
-function saveData(data) {
-  fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-}
-
-function computeStats(gift) {
-  if (gift.sellPrice != null && gift.purchasePrice != null) {
-    const pnl = gift.sellPrice - gift.purchasePrice;
-    const pnlPercent = (pnl / gift.purchasePrice) * 100;
-    gift.pnl = pnl;
-    gift.pnlPercent = pnlPercent;
-  }
-}
 
 app.get('/api/gifts', (req, res) => {
   const data = loadData();
@@ -60,8 +35,9 @@ app.post('/api/gifts', (req, res) => {
   res.json(newGift);
 });
 
-app.patch('/api/gifts/:id', (req, res) => {
-  const { id } = req.params;
+app.patch('/api/gift', (req, res) => {
+  const { id } = req.query;
+
   const { sellPrice, sellCurrency } = req.body;
   const data = loadData();
   const gift = data.find((g) => g.id === id);
@@ -75,16 +51,8 @@ app.patch('/api/gifts/:id', (req, res) => {
 
 app.get('/api/stats', (req, res) => {
   const data = loadData();
-  let totalProfit = 0;
-  let totalPurchase = 0;
-  data.forEach((gift) => {
-    if (gift.sellPrice != null) {
-      totalProfit += gift.pnl;
-      totalPurchase += gift.purchasePrice;
-    }
-  });
-  const overallPnlPercent = totalPurchase ? (totalProfit / totalPurchase) * 100 : 0;
-  res.json({ totalProfit, overallPnlPercent, sold: data.filter(g => g.sellPrice != null).length, total: data.length });
+  const stats = getOverallStats(data);
+  res.json(stats);
 });
 
 const PORT = process.env.PORT || 3000;
