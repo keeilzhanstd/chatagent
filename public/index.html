@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telegram Gift Tracker</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    img.preview { display: block; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>Gift Tracker</h1>
+    <form @submit.prevent="addGift">
+      <input type="url" v-model="newGift.link" placeholder="Gift link" required />
+      <input type="number" v-model.number="newGift.purchasePrice" placeholder="Purchase price" required />
+      <select v-model="newGift.purchaseCurrency">
+        <option value="TON">TON</option>
+        <option value="Stars">Stars</option>
+      </select>
+      <button type="submit">Add</button>
+    </form>
+    <label>Preview scale:
+      <input type="range" v-model.number="previewScale" min="50" max="200" />
+    </label>
+
+    <h2>Gifts</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Preview</th>
+          <th>Link</th>
+          <th>Purchase</th>
+          <th>Sell</th>
+          <th>PnL</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="gift in gifts" :key="gift.id">
+          <td>
+            <img v-if="gift.preview" :src="gift.preview" class="preview" :style="{width: previewScale + 'px'}" />
+            <div v-else>{{ gift.model }} {{ gift.backdrop }} {{ gift.symbol }}</div>
+          </td>
+          <td><a :href="gift.link" target="_blank">{{ gift.link }}</a></td>
+          <td>{{ gift.purchasePrice }} {{ gift.purchaseCurrency }}</td>
+          <td>
+            <input type="number" v-model.number="gift.sellPrice" />
+            <select v-model="gift.sellCurrency">
+              <option value="TON">TON</option>
+              <option value="Stars">Stars</option>
+            </select>
+          </td>
+          <td>
+            <span v-if="gift.pnl">{{ gift.pnl.toFixed(2) }} ({{ gift.pnlPercent.toFixed(2) }}%)</span>
+          </td>
+          <td><button @click="saveGift(gift)">Save</button></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Stats</h2>
+    <div>
+      Total profit: {{ stats.totalProfit.toFixed(2) }}, Overall PnL%: {{ stats.overallPnlPercent.toFixed(2) }}%, Sold {{ stats.sold }}/{{ stats.total }}
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+    createApp({
+      data() {
+        return {
+          gifts: [],
+          stats: { totalProfit: 0, overallPnlPercent: 0, sold: 0, total: 0 },
+          newGift: { link: '', purchasePrice: null, purchaseCurrency: 'TON' },
+          previewScale: 100
+        }
+      },
+      methods: {
+        async load() {
+          const res = await fetch('/api/gifts');
+          this.gifts = await res.json();
+          const sres = await fetch('/api/stats');
+          this.stats = await sres.json();
+        },
+        async addGift() {
+          await fetch('/api/gifts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.newGift)
+          });
+          this.newGift = { link: '', purchasePrice: null, purchaseCurrency: 'TON' };
+          await this.load();
+        },
+        async saveGift(gift) {
+          await fetch('/api/gift?id=' + gift.id, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sellPrice: gift.sellPrice, sellCurrency: gift.sellCurrency })
+          });
+          await this.load();
+        }
+      },
+      mounted() {
+        this.load();
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
