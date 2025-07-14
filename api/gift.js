@@ -8,6 +8,7 @@ module.exports = (req, res) => {
     const { sellPrice, sellCurrency } = req.body;
     const data = loadData();
     const gift = data.find(g => g.id === id);
+    console.log(gift + "\nLOLO ");
     if (!gift) return res.status(404).json({ error: 'not found' });
     if (sellPrice != null) gift.sellPrice = parseFloat(sellPrice);
     if (sellCurrency != null) gift.sellCurrency = sellCurrency;
